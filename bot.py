@@ -17,6 +17,8 @@ currentserver = None
 currentchannel = None
 msgsend = None
 dnd = False
+switchc = False
+switchs = False
 
 notification = AudioSegment.from_file('resources/discord-notification.mp3', format="mp3")
 
@@ -65,6 +67,8 @@ class Background(threading.Thread):
                         name = user.name
                         avatar = requests.get(user.avatar_url).content
                     sendmsg.start()
+                    switchch.start()
+                    switchser.start()
 
                 @tasks.loop(seconds=1)
                 async def sendmsg():
@@ -74,6 +78,31 @@ class Background(threading.Thread):
                         await webhook.send(msgsend)
                         await webhook.delete()
                         msgsend = None
+
+                @tasks.loop(seconds=1)
+                async def switchch():
+                    global switchc
+                    if switchc:
+                        global currentchannel
+                        for channel in currentserver.text_channels:
+                            if channel.name == cino:
+                                currentchannel = channel
+                                print(f"Switched to {currentchannel.name}")
+                                break
+                        switchc = False
+
+                @tasks.loop(seconds=1)
+                async def switchser():
+                    global switchs
+                    if switchs:
+                        global currentserver
+                        for server in bot.guilds:
+                            if server.name == cino:
+                                currentserver = server
+                                print(f"Switched to {currentserver.name}")
+                                switchs = False
+                                break
+                        switchc = False
 
                 @bot.event
                 async def on_message(message):
@@ -101,13 +130,15 @@ class Background(threading.Thread):
 
                 async def wait():
                     await e.wait()
-                    print('stope')
                     await bot.logout()
                     loop.stop()
 
                 async def runbot():
-                    await bot.start(token)
-
+                    try:
+                        await bot.start(token)
+                    except discord.errors.LoginFailure:
+                        print('\033[1;31;40mERROR: Failed login - improper token passed.')
+                        e.set()
                 loop.create_task(runbot())
                 loop.create_task(wait())
                 loop.run_forever()
@@ -121,22 +152,58 @@ task.daemon = True
 task.start()
 
 while True:
-    cin = input(">>> ")
+    cin = input("\033[0;37;40m>>> ")
     print("\033[A                             \033[A")
     if cin.startswith("."):
+        cino = cin
         cin = cin.replace(".","").lower()
         if cin.startswith("connect"):
             if running_bot:
-                print("The bot is already running!")
+                print('\033[1;31;40mERROR: Already connected to Discord!')
             else:
                 startbot = True
                 while True:
-                    if running_bot:
+                    if running_bot or not startbot:
                         break
+        elif cin.startswith("help"):
+            print("[.connect] - Connects to Discord\n[.dnd] - Toggles Do Not Disturb\n[.switch -c] - Switches your channel\n[.switch -s] - Switches your server\n[.token] - Changes your token\n[.exit] - Closes program")
         elif cin.startswith("dnd"):
             dnd = not dnd
+            if dnd:
+                print("DnD is now enabled.")
+            else:
+                print("DnD is now disabled.")
+        elif cin.startswith("token"):
+            token = ''.join(cino.split('.', 1)).replace("token ","")
+            print(f"Token has been updated.")
+        elif cin.startswith("switch -c"):
+            if running_bot:
+                cino = cino.replace(".switch -c ","")
+                switchc = True
+                while True:
+                    if not switchc:
+                        break
+            else:
+                print('\033[1;31;40mERROR: You must be connected to Discord for that.')
+        elif cin.startswith("switch -s"):
+            if running_bot:
+                cino = cino.replace(".switch -s ","")
+                switchs = True
+                while True:
+                    if not switchs:
+                        break
+            else:
+                print('\033[1;31;40mERROR: You must be connected to Discord for that.')
+        elif cin.startswith("switch"):
+            if running_bot:
+                print("Please choose to switch either a server or a channel.")
+            else:
+                print('\033[1;31;40mERROR: You must be connected to Discord for that.')
         elif cin.startswith("stop") or cin.lower().startswith("exit"):
             sys.exit("Thank you for using Delta!")
+        else:
+            print('\033[1;31;40mERROR: Unknown command')
     else:
-        msgsend = cin
-        print(f"<{name}>: {cin}")
+        if running_bot:
+            msgsend = cin
+            print(f"<{name}>: {cin}")
