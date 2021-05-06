@@ -2,7 +2,7 @@
 
 *Brings Discord to wherever there's Python!*
 
-This project is a Work-In-Progress
+This project is in violation with Discord's Terms of Service, therefore it is as of now discontinued. Thank you.
 
 ---
 If you have any issues, [contact me here][support].
