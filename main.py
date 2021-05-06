@@ -100,9 +100,8 @@ class Background(threading.Thread):
                             if server.name == cino:
                                 currentserver = server
                                 print(f"Switched to {currentserver.name}")
-                                switchs = False
                                 break
-                        switchc = False
+                    switchs = False
 
                 @bot.event
                 async def on_message(message):
@@ -178,7 +177,10 @@ while True:
             print(f"Token has been updated.")
         elif cin.startswith("switch -c"):
             if running_bot:
-                cino = cino.replace(".switch -c ","")
+                try:
+                    cino = cino.replace(".switch -c ","")
+                except:
+                    cino = ""
                 switchc = True
                 while True:
                     if not switchc:
@@ -187,7 +189,10 @@ while True:
                 print('\033[1;31;40mERROR: You must be connected to Discord for that.')
         elif cin.startswith("switch -s"):
             if running_bot:
-                cino = cino.replace(".switch -s ","")
+                try:
+                    cino = cino.replace(".switch -s ","")
+                except:
+                    cino = ""
                 switchs = True
                 while True:
                     if not switchs:
